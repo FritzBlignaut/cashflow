@@ -1,0 +1,11 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    env_file:
+      - .env
+    ports:
+      - "1433:1433"
+    volumes:
+      - F:/DOCKER/Volumes/SqlData/data:/var/opt/mssql/data
+      - F:/DOCKER/Volumes/SqlData/log:/var/opt/mssql/log
+      - F:/DOCKER/Volumes/SqlData/secrets:/var/opt/mssql/secrets
