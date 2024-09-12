@@ -22,6 +22,8 @@ model Transaction {
   updatedAt         DateTime        @updatedAt
   transactionType   TransactionType @relation(fields: [transactionTypeId], references: [id])
   transactionTypeId String
+
+  @@unique([description, transactionDate])
 }
 
 model TransactionType {
