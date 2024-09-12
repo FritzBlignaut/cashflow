@@ -34,3 +34,11 @@ model TransactionType {
   updatedAt           DateTime      @updatedAt
   transaction         Transaction[]
 }
+
+model TransactionCategory {
+  id                  String   @id @default(cuid())
+  transactionCategory String
+  description         String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
