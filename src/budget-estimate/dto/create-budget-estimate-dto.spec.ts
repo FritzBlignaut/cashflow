@@ -1,7 +1,7 @@
-import { CreateBudgetEstimate } from './create-budget-estimate-dto';
+import { CreateBudgetEstimateDto } from './create-budget-estimate-dto';
 
 describe('CreateBudgetEstimate', () => {
   it('should be defined', () => {
-    expect(new CreateBudgetEstimate()).toBeDefined();
+    expect(new CreateBudgetEstimateDto()).toBeDefined();
   });
 });
