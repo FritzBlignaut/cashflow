@@ -36,9 +36,33 @@ model TransactionType {
 }
 
 model TransactionCategory {
-  id                  String   @id @default(cuid())
+  id                  String           @id @default(cuid())
   transactionCategory String
   description         String
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  budgetId            String?
+  BudgetEstimate      BudgetEstimate[]
+}
+
+model Budget {
+  id              String           @id @default(cuid())
+  budgetName      String
+  budgetStartDate DateTime
+  budgetEndDate   DateTime
+  budgetActive    Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  budgetEstimate  BudgetEstimate[]
+}
+
+model BudgetEstimate {
+  id                    String              @id @default(cuid())
+  budgetAmount          Float
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  budget                Budget              @relation(fields: [budgetId], references: [id])
+  budgetId              String
+  transactionCategory   TransactionCategory @relation(fields: [transactionCategoryId], references: [id])
+  transactionCategoryId String
 }
