@@ -1,6 +1,25 @@
+version: '3.8'
+
 services:
+  backend:
+    build: .
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    networks:
+      - default
+    ports:
+      - 3000:3000
+    environment:
+      NODE_ENV: development
+    depends_on:
+      - db
+    command: npm run start:dev
+
   db:
     image: mcr.microsoft.com/mssql/server:2019-latest
+    networks:
+      - default
     env_file:
       - .env
     ports:
@@ -9,3 +28,6 @@ services:
       - F:/DOCKER/Volumes/SqlData/data:/var/opt/mssql/data
       - F:/DOCKER/Volumes/SqlData/log:/var/opt/mssql/log
       - F:/DOCKER/Volumes/SqlData/secrets:/var/opt/mssql/secrets
+
+networks:
+  default:
