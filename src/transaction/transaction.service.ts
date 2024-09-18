@@ -75,8 +75,6 @@ export class TransactionService {
 
                             if (!existingTransaction) {
                                 transactions.push(transaction);
-                            } else {
-                                console.log(`Transaction already exists: ${JSON.stringify(transaction)}`);
                             }
                         } catch (error) {
                             console.error(`Error processing row: ${JSON.stringify(row)}, Error: ${error.message}`);
@@ -93,7 +91,7 @@ export class TransactionService {
                         const uniqueTransactions = transactions.filter((transaction, index, self) =>
                             index === self.findIndex((t) => (
                                 t.description === transaction.description &&
-                                t.transactionDate === transaction.transactionDate &&
+                                t.transactionDate === moment.utc(transaction.transactionDate, 'DD/MM/YYYY').toISOString() &&
                                 t.amount === transaction.amount &&
                                 t.totalAmount === transaction.totalAmount
                             ))
@@ -104,7 +102,13 @@ export class TransactionService {
                         if (uniqueTransactions.length > 0) {
                             await this.prisma.transaction.createMany({ data: uniqueTransactions });
                         }
+
+                        // Delete the file after successful processing
+                        await fs.promises.access(filePath, fs.constants.F_OK);
+                        await fs.promises.unlink(filePath);
+                        console.log(`File deleted successfully: ${filePath}`);
                         resolve();
+
                     } catch (error) {
                         if (error.code === 'P2002') {
                             console.error('Unique constraint violation:', error.meta.target);
