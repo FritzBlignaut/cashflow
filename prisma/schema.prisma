@@ -19,12 +19,13 @@ model Transaction {
   amount            Float
   description       String
   transactionDate   DateTime        @db.Date
+  totalAmount       Float
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   transactionType   TransactionType @relation(fields: [transactionTypeId], references: [id])
   transactionTypeId String
 
-  @@unique([description, transactionDate])
+  @@unique([description, transactionDate, amount, totalAmount])
 }
 
 model TransactionType {

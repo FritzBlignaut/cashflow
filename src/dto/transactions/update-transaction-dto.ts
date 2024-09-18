@@ -19,4 +19,8 @@ export class UpdateTransactionDto {
     @Transform(({ value }) => new ParseDatePipe().transform(value))
     @IsDateString()
     transactionDate?: string;
+
+    @IsOptional()
+    @IsNumber()
+    totalAmount?: number;
 }

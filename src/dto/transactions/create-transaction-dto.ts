@@ -15,4 +15,7 @@ export class CreateTransactionDto {
     @Transform(({ value }) => new ParseDatePipe().transform(value))
     @IsDateString()
     transactionDate: string;
+
+    @IsNumber()
+    totalAmount: number;
 }

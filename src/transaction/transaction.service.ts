@@ -41,42 +41,76 @@ export class TransactionService {
 
     async importCsv(filePath: string): Promise<void> {
         const transactions: any[] = [];
+        const promises: Promise<void>[] = [];
 
         return new Promise((resolve, reject) => {
             fs.createReadStream(filePath)
                 .pipe(csv({ headers: false }))
                 .on('data', async (row) => {
-                    const amount = parseFloat(row[1]);
-                    const transactionTypeId = amount < 0 ? TransactionType.EXPENSE : TransactionType.INCOME;
+                    const promise = (async () => {
+                        try {
+                            const amount = parseFloat(row[1]);
+                            const totalAmount = parseFloat(row[3]);
+                            const transactionTypeId = amount < 0 ? TransactionType.EXPENSE : TransactionType.INCOME;
 
-                    const transaction = {
-                        description: row[2],
-                        amount: amount,
-                        transactionDate: moment.utc(row[0], 'DD/MM/YYYY').toISOString(),
-                        transactionTypeId: transactionTypeId,
-                    };
+                            const transaction = {
+                                description: row[2],
+                                amount: amount,
+                                transactionDate: moment.utc(row[0], 'DD/MM/YYYY').toISOString(),
+                                totalAmount: totalAmount,
+                                transactionTypeId: transactionTypeId,
+                            };
 
-                    // Check if the transaction already exists
-                    const existingTransaction = await this.prisma.transaction.findUnique({
-                        where: {
-                            description_transactionDate: {
-                                description: transaction.description,
-                                transactionDate: transaction.transactionDate,
-                            },
-                        },
-                    });
+                            // Check if the transaction already exists
+                            const existingTransaction = await this.prisma.transaction.findUnique({
+                                where: {
+                                    description_transactionDate_amount_totalAmount: {
+                                        description: transaction.description,
+                                        transactionDate: transaction.transactionDate,
+                                        amount: transaction.amount,
+                                        totalAmount: transaction.totalAmount,
+                                    },
+                                },
+                            });
 
-                    if (!existingTransaction) {
-                        transactions.push(transaction);
-                    }
+                            if (!existingTransaction) {
+                                transactions.push(transaction);
+                            } else {
+                                console.log(`Transaction already exists: ${JSON.stringify(transaction)}`);
+                            }
+                        } catch (error) {
+                            console.error(`Error processing row: ${JSON.stringify(row)}, Error: ${error.message}`);
+                        }
+                    })();
+                    promises.push(promise);
                 })
                 .on('end', async () => {
                     try {
-                        if (transactions.length > 0) {
-                            await this.prisma.transaction.createMany({ data: transactions });
+                        await Promise.all(promises);
+                        console.log(`Transactions before filtering: ${transactions.length}`);
+
+                        // Filter out duplicate transactions
+                        const uniqueTransactions = transactions.filter((transaction, index, self) =>
+                            index === self.findIndex((t) => (
+                                t.description === transaction.description &&
+                                t.transactionDate === transaction.transactionDate &&
+                                t.amount === transaction.amount &&
+                                t.totalAmount === transaction.totalAmount
+                            ))
+                        );
+
+                        console.log(`Transactions after filtering: ${uniqueTransactions.length}`);
+
+                        if (uniqueTransactions.length > 0) {
+                            await this.prisma.transaction.createMany({ data: uniqueTransactions });
                         }
                         resolve();
                     } catch (error) {
+                        if (error.code === 'P2002') {
+                            console.error('Unique constraint violation:', error.meta.target);
+                        } else {
+                            console.error('Error inserting transactions:', error.message);
+                        }
                         reject(error);
                     }
                 })
