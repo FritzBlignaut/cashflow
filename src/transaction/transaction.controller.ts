@@ -13,7 +13,6 @@ export class TransactionController {
 
     @Get()
     async findAll() {
-        console.log(`TEST FINDALL`);
         return this.transactionService.findAll();
     }
 
