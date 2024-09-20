@@ -39,6 +39,17 @@ export class TransactionService {
         });
     }
 
+    async findTransactionsBetween(budgetStartDate: string, budgetEndDate: string): Promise<Transaction[]> {
+        return await this.prisma.transaction.findMany({
+            where: {
+                transactionDate: {
+                    gte: moment.utc(budgetStartDate, 'YYYY-MM-DD').toISOString(),
+                    lte: moment.utc(budgetEndDate, 'YYYY-MM-DD').toISOString(),
+                },
+            },
+        });
+    }
+
     async importCsv(filePath: string): Promise<void> {
         const transactions: any[] = [];
         const promises: Promise<void>[] = [];

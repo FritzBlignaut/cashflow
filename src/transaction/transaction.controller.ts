@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, ValidationPipe, UsePipes, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, ValidationPipe, UsePipes, UseInterceptors, UploadedFile, Query, Header } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { CreateTransactionDto } from '../dto/transactions/create-transaction-dto';
 import { UpdateTransactionDto } from '../dto/transactions/update-transaction-dto';
@@ -13,7 +13,13 @@ export class TransactionController {
 
     @Get()
     async findAll() {
+        console.log(`TEST FINDALL`);
         return this.transactionService.findAll();
+    }
+
+    @Get('between-dates')
+    async findTransactionsBetween(@Query('budgetStartDate') budgetStartDate: string, @Query('budgetEndDate') budgetEndDate: string) {
+        return this.transactionService.findTransactionsBetween(budgetStartDate, budgetEndDate);
     }
 
     @Get(':id')
