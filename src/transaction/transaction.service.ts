@@ -53,6 +53,7 @@ export class TransactionService {
     async importCsv(filePath: string): Promise<void> {
         const transactions: any[] = [];
         const promises: Promise<void>[] = [];
+        const BATCH_SIZE = 500; // Define a batch size to avoid exceeding the parameter limit
 
         return new Promise((resolve, reject) => {
             fs.createReadStream(filePath)
@@ -72,21 +73,43 @@ export class TransactionService {
                                 transactionTypeId: transactionTypeId,
                             };
 
-                            // Check if the transaction already exists
-                            const existingTransaction = await this.prisma.transaction.findUnique({
-                                where: {
-                                    description_transactionDate_amount_totalAmount: {
-                                        description: transaction.description,
-                                        transactionDate: transaction.transactionDate,
-                                        amount: transaction.amount,
-                                        totalAmount: transaction.totalAmount,
-                                    },
-                                },
-                            });
+                            // Check if the transactions table is empty
+                            const transactionCount = await this.prisma.transaction.count();
 
-                            if (!existingTransaction) {
+                            if (transactionCount === 0) {
+                                // If the table is empty, directly add the transaction
                                 transactions.push(transaction);
+                            } else {
+                                // Check if the transaction already exists
+                                const existingTransaction = await this.prisma.transaction.findUnique({
+                                    where: {
+                                        transactionDate_amount_totalAmount: {
+                                            transactionDate: transaction.transactionDate,
+                                            amount: transaction.amount,
+                                            totalAmount: transaction.totalAmount,
+                                        }
+                                    },
+                                });
+
+                                if (!existingTransaction) {
+                                    transactions.push(transaction);
+                                }
                             }
+
+                            // Check if the transaction already exists
+                            // const existingTransaction = await this.prisma.transaction.findUnique({
+                            //     where: {
+                            //         transactionDate_amount_totalAmount: {
+                            //             transactionDate: transaction.transactionDate,
+                            //             amount: transaction.amount,
+                            //             totalAmount: transaction.totalAmount,
+                            //         },
+                            //     },
+                            // });
+
+                            // if (existingTransaction !== null) {
+                            //     transactions.push(transaction);
+                            // }
                         } catch (error) {
                             console.error(`Error processing row: ${JSON.stringify(row)}, Error: ${error.message}`);
                         }
@@ -96,30 +119,39 @@ export class TransactionService {
                 .on('end', async () => {
                     try {
                         await Promise.all(promises);
-                        console.log(`Transactions before filtering: ${transactions.length}`);
+                        // console.log(`Transactions before filtering: ${transactions.length}`);
 
-                        // Filter out duplicate transactions
-                        const uniqueTransactions = transactions.filter((transaction, index, self) =>
-                            index === self.findIndex((t) => (
-                                t.description === transaction.description &&
-                                t.transactionDate === moment.utc(transaction.transactionDate, 'DD/MM/YYYY').toISOString() &&
-                                t.amount === transaction.amount &&
-                                t.totalAmount === transaction.totalAmount
-                            ))
-                        );
+                        // // Filter out duplicate transactions
+                        // const uniqueTransactions = transactions.filter((transaction, index, self) =>
+                        //     index === self.findIndex((t) => (
+                        //         t.transactionDate === moment.utc(transaction.transactionDate, 'DD/MM/YYYY').toISOString() &&
+                        //         t.amount === transaction.amount &&
+                        //         t.totalAmount === transaction.totalAmount
+                        //     ))
+                        // );
 
-                        console.log(`Transactions after filtering: ${uniqueTransactions.length}`);
+                        // console.log(`Transactions after filtering: ${uniqueTransactions.length}`);
 
-                        if (uniqueTransactions.length > 0) {
-                            await this.prisma.transaction.createMany({ data: uniqueTransactions });
+                        // Batch insert transactions
+                        for (let i = 0; i < transactions.length; i += BATCH_SIZE) {
+                            const batch = transactions.slice(i, i + BATCH_SIZE);
+                            await this.prisma.transaction.createMany({ data: batch });
                         }
 
-                        // Delete the file after successful processing
-                        await fs.promises.access(filePath, fs.constants.F_OK);
-                        await fs.promises.unlink(filePath);
-                        console.log(`File deleted successfully: ${filePath}`);
-                        resolve();
+                        // if (uniqueTransactions.length > 0) {
+                        //     await this.prisma.transaction.createMany({ data: uniqueTransactions });
+                        // }
 
+                        // Delete the file after successful processing
+                        try {
+                            await fs.promises.access(filePath, fs.constants.F_OK);
+                            await fs.promises.unlink(filePath);
+                            console.log(`File deleted successfully: ${filePath}`);
+                            resolve();
+                        } catch (err) {
+                            console.error(`Error deleting file: ${filePath}, Error: ${err.message}`);
+                            reject(err);
+                        }
                     } catch (error) {
                         if (error.code === 'P2002') {
                             console.error('Unique constraint violation:', error.meta.target);

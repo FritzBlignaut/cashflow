@@ -25,7 +25,7 @@ model Transaction {
   transactionType   TransactionType @relation(fields: [transactionTypeId], references: [id])
   transactionTypeId String
 
-  @@unique([description, transactionDate, amount, totalAmount])
+  @@unique([transactionDate, amount, totalAmount], name: "transactionDate_amount_totalAmount")
 }
 
 model TransactionType {

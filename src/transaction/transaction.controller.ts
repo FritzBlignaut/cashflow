@@ -60,11 +60,6 @@ export class TransactionController {
     )
     async importCsv(@UploadedFile() file: Multer.File) {
         await this.transactionService.importCsv(file.path);
-        fs.unlink(file.path, (err) => {
-            if (err) {
-                console.error(`Failed to delete file: ${file.path}`, err);
-            }
-        });
         return { message: 'CSV file processed successfully' };
     }
 }
