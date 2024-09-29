@@ -15,15 +15,16 @@ datasource db {
 }
 
 model Transaction {
-  id                String          @id @default(cuid())
-  amount            Float
-  description       String
-  transactionDate   DateTime        @db.Date
-  totalAmount       Float
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  transactionType   TransactionType @relation(fields: [transactionTypeId], references: [id])
-  transactionTypeId String
+  id                        String                      @id @default(cuid())
+  amount                    Float
+  description               String
+  transactionDate           DateTime                    @db.Date
+  totalAmount               Float
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  transactionType           TransactionType             @relation(fields: [transactionTypeId], references: [id])
+  transactionTypeId         String
+  TransactionBudgetEstimate TransactionBudgetEstimate[]
 
   @@unique([transactionDate, amount, totalAmount], name: "transactionDate_amount_totalAmount")
 }
@@ -59,12 +60,23 @@ model Budget {
 }
 
 model BudgetEstimate {
-  id                    String              @id @default(cuid())
-  budgetAmount          Float
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  budget                Budget              @relation(fields: [budgetId], references: [id])
-  budgetId              String
-  transactionCategory   TransactionCategory @relation(fields: [transactionCategoryId], references: [id])
-  transactionCategoryId String
+  id                        String                      @id @default(cuid())
+  budgetAmount              Float
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  budget                    Budget                      @relation(fields: [budgetId], references: [id])
+  budgetId                  String
+  transactionCategory       TransactionCategory         @relation(fields: [transactionCategoryId], references: [id])
+  transactionCategoryId     String
+  TransactionBudgetEstimate TransactionBudgetEstimate[]
+}
+
+model TransactionBudgetEstimate {
+  id               String         @id @default(cuid())
+  transactionId    String
+  budgetEstimateId String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  transaction      Transaction    @relation(fields: [transactionId], references: [id])
+  budgetEstimate   BudgetEstimate @relation(fields: [budgetEstimateId], references: [id])
 }
